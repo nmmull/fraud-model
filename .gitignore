@@ -1,7 +1,7 @@
 *.aux
 *.bbl
 *.blg
-*.fdb_latexml
+*.fdb_latexmk
 *.fls
 *.log
 *.pdf
