@@ -1,0 +1,103 @@
+\documentclass{article}[10pt]
+
+% palatino
+\usepackage{mathpazo}
+
+% 1 inch margins
+\usepackage[margin=1in]{geometry}
+
+% line spacing
+%% \usepackage{setspace}
+%% \setstretch{1.15}
+
+% better quotes
+\usepackage{csquotes}
+
+% standard math tools
+\usepackage{amsthm, amssymb, mathtools, bussproofs}
+
+% highlights
+\usepackage{soul}
+
+\input{macros.tex}
+
+%% \setlength{\parindent}{0cm}
+%% \setlength{\parskip}{1cm}
+
+\title{A Theoretical Model for Fraud}
+\author{James Lee and Nathan Mull}
+\begin{document}
+\maketitle
+
+\section{The Model}
+
+We begin by describing an abstract model of fraud detection, along the lines of what is done by Paladini et.\ al \cite{paladini2023advancing} and du Preez et.\ al \cite{du2024systems}.
+Fix a set $\X$ representing possible \textbf{transactions} with a designated unit element $\bullet$.
+The unit element represents \enquote{no transaction.}
+Also fix a \textbf{cost function} of the form
+\begin{align*}
+\mu : \X \to \mathbb R^{\geq 0}
+\end{align*}
+where $\mu(\bullet) = 0$.
+We think of the cost function as describing the amount of a given transaction, so no transaction has zero cost.
+A \textbf{fraudster} is a function of the following form.
+\begin{align*}
+  \F : (\X \times \zo \times \zo)^* \to \X
+\end{align*}
+The input to a fraudster is called transcript (defined formally below), and is of the form $\langle Y_i, f_i, l_i \rangle_{i = 1}^n$ where $Y_i$ is the transaction made at time step $i$, the value $f_i$ is an indicator of whether or not $Y_i$ was a fraudulent transaction, and $l_i$ is the label given to the transaction by the interacting fraud detecter (defined below).
+We think of a fraudster as determining what transaction to make given the previous transactions made by their target or themselves.
+In particular, the fraudster has access to whether or not they were successful in their previous fraudulent transactions.
+
+A fraudster interacts with a \textbf{detecter}, which is a function of the following form.
+\begin{align*}
+  \cL : (\X \times \zo \times \zo)^* \to \zo^{\X}
+\end{align*}
+We will typically assume that $\cL(\cdot)(\bullet) = 0$ since \enquote{no transaction} should never be labeled as fraudulent.
+We think of the detecter as determining how it will decide its next label according to what transaction it sees.
+
+Consider a sequence of transactions $\langle X_i \rangle_{i = 1}^n$.
+A $(\cL, \F)$-\textbf{transcript} for $\langle X_i \rangle_{i = 1}^n$ is a sequence of the from $\langle  Y_i, f_i, l_i \rangle_{i = 1}^n$ from $(\X \times \zo \times \zo)^*$ defined inductively as follows.
+\begin{align*}
+  Y_{k + 1} &=
+  \begin{cases}
+    X_{k + 1} & \F(\langle Y_i, f_i, l_i\rangle_{i = 1}^k) = \bullet \\
+    \F(\langle Y_i, f_i, l_i \rangle_{i = 1}^k) & \ow
+  \end{cases} \\
+  f_{k + 1} &=
+  \begin{cases}
+    0 & \F(\langle Y_i, f_i, l_i\rangle_{i = 1}^k) = \bullet \\
+    1 & \ow
+  \end{cases} \\
+  l_{k + 1} &= \cL(\langle Y_i, f_i, l_i\rangle_{i = 1}^k)(Y_{k + 1})
+\end{align*}
+In other words, the fraudster has the ability to hijack transactions, and the detecter attempts to determine at each time step if the transaction has been hijacked.
+The \textbf{false negative loss} of a detecter on a transcript $\langle Y_i, f_i, l_i \rangle_{i = 1}^k$ is define as follows.
+\begin{align*}
+  \ell_{\text{FN}}(\langle Y_i, f_i, l_i \rangle_{i = 1}^k) = \sum_{i = 1}^k \mu(Y_i) \mathbb 1[l_i = 0 \land f_i = 1]
+\end{align*}
+The \textbf{false positive loss} is defined similarly, relative to a constant $\gamma_{\text{FP}}$.
+\begin{align*}
+  \ell_{\text{FP}}(\langle Y_i, f_i, l_i \rangle_{i = 1}^k) = \sum_{i = 1}^k \gamma_{\text{FP}} \mathbb 1[l_i = 1 \land f_i = 0]
+\end{align*}
+The constant represents the penalty for labeling, say, a bank users transaction as fraudulent, and should large enough dissuade the detecter from labeling all transactions as fraudulent.
+Finally, the \textbf{total loss} is the sum of the false negative loss and the false positive loss.
+\begin{align*}
+  \ell(\mathcal T) = \ell_{\text{FN}}(\mathcal T) + \ell_{\text{FP}}(\mathcal T)
+\end{align*}
+This model obviously does not capture all facets of the fraud detection problem, but it provides a starting point for being able to state theoretical results.
+
+There are a couple features about the model to note.
+\begin{itemize}
+\item
+  The fraudster and the detecter determine their parts of a transaction simultaneously, so this model meshes naturally with game-theoretic ones.
+  In particular, it is possible to construct a (very large) game matrix in which the fraudster chooses a transaction, the detecter choose a binary function on transactions, and the entry in the matrix is the total loss on the singleton transcript for this transaction.
+Furthermore, the size of the domain for the detecter can be drastically decreased by considering a fixed set of expert detecters.
+\item
+  The model is too general too say anything all that interesting.
+\end{itemize}
+
+
+
+\bibliographystyle{plain}
+\bibliography{refs}
+\end{document}
